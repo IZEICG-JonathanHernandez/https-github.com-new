@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -32,39 +32,71 @@
   <p id="msg"></p>
 
   <script>
-    const LAMBDA_URL = "https://anbjtc464lm4ptqjcxu474pfu0yaqb.lambda-url.us-east-2.on.aws/"; // 👈 tu Lambda URL
+    const LAMBDA_URL = "https://anbjtc464lm4ptqjcxu474pfu0yaqb.lambda-url.us-east-2.on.aws/";
     const params = new URLSearchParams(window.location.search);
     const user = params.get("user");
+
+    console.log("🔍 Param user recibido:", user);
 
     document.getElementById("btn").addEventListener("click", () => {
       const msg = document.getElementById("msg");
       msg.innerText = "Obteniendo ubicación…";
+      console.log("📡 Solicitando geolocalización...");
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const data = {
-            user,
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
+          console.log("📍 Posición obtenida:", position);
+
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          console.log("➡ Latitud:", lat);
+          console.log("➡ Longitud:", lng);
+
+          const data = { user, lat, lng };
 
           msg.innerText = "Enviando coordenadas…";
+          console.log("📤 Enviando POST a Lambda:", LAMBDA_URL);
+          console.log("📤 Body enviado:", data);
 
           fetch(LAMBDA_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
           })
-            .then((res) => res.json())
-            .then(() => {
+            .then(async (res) => {
+              console.log("📥 Respuesta cruda de Lambda:", res);
+
+              const body = await res.text();
+              console.log("📥 Respuesta BODY:", body);
+
+              if (!res.ok) {
+                msg.innerText = "❌ Error enviando ubicación.";
+                console.error("⚠ Error HTTP:", res.status, res.statusText);
+                return;
+              }
+
               msg.innerText = "✔ Ubicación enviada correctamente.";
+              console.log("🎉 Ubicación enviada OK");
             })
-            .catch(() => {
+            .catch((err) => {
               msg.innerText = "❌ Error enviando ubicación.";
+              console.error("❌ ERROR FETCH:", err);
             });
         },
-        () => {
-          msg.innerText = "❌ No se pudo obtener la ubicación.";
+
+        (error) => {
+          console.error("❌ Error obteniendo ubicación:", error);
+
+          if (error.code === 1) {
+            msg.innerText = "❌ Permiso de ubicación denegado.";
+          } else if (error.code === 2) {
+            msg.innerText = "❌ Ubicación no disponible.";
+          } else if (error.code === 3) {
+            msg.innerText = "❌ Timeout obteniendo ubicación.";
+          } else {
+            msg.innerText = "❌ No se pudo obtener la ubicación.";
+          }
         }
       );
     });
