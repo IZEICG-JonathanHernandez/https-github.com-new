@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enviar ubicación a Slack</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 40px;
+    }
+    button {
+      padding: 15px 25px;
+      background-color: #4A154B;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📍 Compartir ubicación con Slack</h2>
+  <p>Presiona el botón para enviar tu ubicación actual.</p>
+
+  <button onclick="enviarUbicacion()">Enviar mi ubicación</button>
+
+  <p id="status"></p>
+
+  <script>
+    async function enviarUbicacion() {
+      const status = document.getElementById("status");
+      status.innerText = "Obteniendo ubicación…";
+
+      if (!navigator.geolocation) {
+        return status.innerText = "Tu navegador no soporta geolocalización.";
+      }
+
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        status.innerText = "Enviando coordenadas…";
+
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get("user");
+
+        await fetch("https://https://anbijtc464lm4ptqjcxu474pfu0yaapb.lambda-url.us-east-2.on.aws//coords", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user: userId, lat, lng }),
+        });
+
+        status.innerText = "¡Ubicación enviada a Slack!";
+      }, (err) => {
+        status.innerText = "Error obteniendo ubicación: " + err.message;
+      });
+    }
+  </script>
+</body>
+</html>
