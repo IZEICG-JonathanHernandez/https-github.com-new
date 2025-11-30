@@ -2,65 +2,72 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Enviar ubicación a Slack</title>
+
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       text-align: center;
-      padding: 40px;
+      margin-top: 50px;
     }
     button {
-      padding: 15px 25px;
-      background-color: #4A154B;
+      background-color: #611f69;
       color: white;
+      padding: 15px 25px;
       border: none;
-      border-radius: 6px;
+      border-radius: 5px;
       font-size: 18px;
       cursor: pointer;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 18px;
     }
   </style>
 </head>
 <body>
+
   <h2>📍 Compartir ubicación con Slack</h2>
   <p>Presiona el botón para enviar tu ubicación actual.</p>
 
-  <button onclick="enviarUbicacion()">Enviar mi ubicación</button>
+  <button id="btn">Enviar mi ubicación</button>
 
-  <p id="status"></p>
+  <p id="msg"></p>
 
   <script>
-    async function enviarUbicacion() {
-      const status = document.getElementById("status");
-      status.innerText = "Obteniendo ubicación…";
+    const LAMBDA_URL = "https://anbjtc464lm4ptqjcxu474pfu0yaqb.lambda-url.us-east-2.on.aws/"; // 👈 tu Lambda URL
+    const params = new URLSearchParams(window.location.search);
+    const user = params.get("user");
 
-      if (!navigator.geolocation) {
-        return status.innerText = "Tu navegador no soporta geolocalización.";
-      }
+    document.getElementById("btn").addEventListener("click", () => {
+      const msg = document.getElementById("msg");
+      msg.innerText = "Obteniendo ubicación…";
 
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const data = {
+            user,
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
 
-        status.innerText = "Enviando coordenadas…";
+          msg.innerText = "Enviando coordenadas…";
 
-        const params = new URLSearchParams(window.location.search);
-        const userId = params.get("user");
-
-        await fetch("https://https://anbijtc464lm4ptqjcxu474pfu0yaapb.lambda-url.us-east-2.on.aws//coords", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user: userId, lat, lng }),
-        });
-
-        status.innerText = "¡Ubicación enviada a Slack!";
-      }, (err) => {
-        status.innerText = "Error obteniendo ubicación: " + err.message;
-      });
-    }
+          fetch(LAMBDA_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          })
+            .then((res) => res.json())
+            .then(() => {
+              msg.innerText = "✔ Ubicación enviada correctamente.";
+            })
+            .catch(() => {
+              msg.innerText = "❌ Error enviando ubicación.";
+            });
+        },
+        () => {
+          msg.innerText = "❌ No se pudo obtener la ubicación.";
+        }
+      );
+    });
   </script>
 </body>
 </html>
