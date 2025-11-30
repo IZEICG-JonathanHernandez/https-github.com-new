@@ -1,9 +1,9 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Enviar ubicación a Slack</title>
+  <title>Enviar ubicación a SlackK</title>
 
   <style>
     body {
@@ -36,53 +36,37 @@
     const params = new URLSearchParams(window.location.search);
     const user = params.get("user");
 
-    console.log("🔍 Param user recibido:", user);
+    console.log("🔍 Parámetro recibido (user):", user);
 
     document.getElementById("btn").addEventListener("click", () => {
       const msg = document.getElementById("msg");
+
       msg.innerText = "Obteniendo ubicación…";
       console.log("📡 Solicitando geolocalización...");
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          console.log("📍 Posición obtenida:", position);
+          console.log("📍 Posición obtenida con éxito");
+          console.log("➡ position:", position);
 
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
 
-          console.log("➡ Latitud:", lat);
-          console.log("➡ Longitud:", lng);
+          console.log("🌎 LATITUD:", lat);
+          console.log("🌍 LONGITUD:", lng);
 
-          const data = { user, lat, lng };
+          msg.innerText = "Ubicación obtenida ✔ (mira la consola)";
 
-          msg.innerText = "Enviando coordenadas…";
-          console.log("📤 Enviando POST a Lambda:", LAMBDA_URL);
-          console.log("📤 Body enviado:", data);
+          // *** Solo mostramos los logs, aún no mandamos nada ***
+          console.log("📦 Objeto listo para enviar a Lambda:");
+          console.log({
+            user: user,
+            lat: lat,
+            lng: lng,
+          });
 
-          fetch(LAMBDA_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          })
-            .then(async (res) => {
-              console.log("📥 Respuesta cruda de Lambda:", res);
-
-              const body = await res.text();
-              console.log("📥 Respuesta BODY:", body);
-
-              if (!res.ok) {
-                msg.innerText = "❌ Error enviando ubicación.";
-                console.error("⚠ Error HTTP:", res.status, res.statusText);
-                return;
-              }
-
-              msg.innerText = "✔ Ubicación enviada correctamente.";
-              console.log("🎉 Ubicación enviada OK");
-            })
-            .catch((err) => {
-              msg.innerText = "❌ Error enviando ubicación.";
-              console.error("❌ ERROR FETCH:", err);
-            });
+          // ⚠️ No enviamos nada aún, solo logs.
+          console.warn("⚠️ Aún NO estamos enviando a Lambda. Solo mostrando logs.");
         },
 
         (error) => {
